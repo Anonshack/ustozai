@@ -15,6 +15,7 @@ class LessonProgress(models.Model):
 
     class Meta:
         db_table = "lesson_progress"
+        ordering = ["lesson"]
         unique_together = ("student", "lesson")
 
     def __str__(self):
@@ -34,6 +35,7 @@ class CourseProgress(models.Model):
 
     class Meta:
         db_table = "course_progress"
+        ordering = ["-last_accessed_at"]
         unique_together = ("student", "course")
 
     @property
@@ -61,6 +63,7 @@ class WeakArea(models.Model):
 
     class Meta:
         db_table = "weak_areas"
+        ordering = ["-created_at"]
         unique_together = ("student", "topic")
 
     def __str__(self):

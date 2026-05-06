@@ -191,9 +191,10 @@ def _refresh_summary_if_needed(conversation: Conversation, client: anthropic.Ant
     conversation.save(update_fields=["summary", "summary_message_count"])
 
 
-def get_ai_response(conversation: Conversation, user_message: str) -> tuple[str, int, int]:
+def get_ai_response(conversation: Conversation) -> tuple[str, int, int]:
     """
     Returns (reply_text, input_tokens, output_tokens).
+    The current user message must be saved to DB before calling this.
     Uses: temperature 0.5, prompt caching, RAG, rolling summary.
     """
     client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
@@ -208,20 +209,19 @@ def get_ai_response(conversation: Conversation, user_message: str) -> tuple[str,
         + _build_rag_context(conversation)
     )
 
-    # Build message list: summary block (if exists) + last N fresh messages
+    # Build message list: summary block (if exists) + last N fresh messages.
+    # The current user message is already saved to DB before this call,
+    # so it is included in fresh_messages — do NOT append it again.
     fresh_messages = list(
         conversation.messages.order_by("-created_at")[:_FRESH_MESSAGE_COUNT]
     )
     history = [{"role": m.role, "content": m.content} for m in reversed(fresh_messages)]
 
     if conversation.summary:
-        # Prepend summary as the first user/assistant exchange so the model treats it as prior context
         history = [
             {"role": "user", "content": "[Earlier conversation summary]"},
             {"role": "assistant", "content": conversation.summary},
         ] + history
-
-    history.append({"role": "user", "content": user_message})
 
     response = client.messages.create(
         model=settings.ANTHROPIC_MODEL,

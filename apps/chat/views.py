@@ -71,7 +71,7 @@ class ConversationViewSet(viewsets.ModelViewSet):
 
         # Get AI response
         try:
-            reply, input_tokens, output_tokens = get_ai_response(conversation, user_text)
+            reply, input_tokens, output_tokens = get_ai_response(conversation)
         except Exception as e:
             return Response(
                 {"detail": f"AI service error: {str(e)}"},

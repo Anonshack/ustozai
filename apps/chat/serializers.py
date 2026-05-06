@@ -36,7 +36,8 @@ class ConversationDetailSerializer(serializers.ModelSerializer):
 class ConversationCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Conversation
-        fields = ("title", "course", "lesson")
+        fields = ("id", "title", "course", "lesson")
+        read_only_fields = ("id",)
 
 
 class SendMessageSerializer(serializers.Serializer):

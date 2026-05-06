@@ -127,6 +127,7 @@ class QuizChoice(models.Model):
 
     class Meta:
         db_table = "quiz_choices"
+        ordering = ["id"]
 
     def __str__(self):
         return f"{'✓' if self.is_correct else '✗'} {self.text[:60]}"
@@ -158,3 +159,4 @@ class QuizAnswer(models.Model):
 
     class Meta:
         db_table = "quiz_answers"
+        ordering = ["question__order"]
