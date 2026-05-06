@@ -49,7 +49,7 @@ export default function CourseDetailPage() {
               {course.category && <span className="badge bg-gray-100 text-gray-600">{course.category.name}</span>}
             </div>
             <p className="text-sm text-gray-500">
-              O'qituvchi: <strong>{course.teacher.first_name} {course.teacher.last_name}</strong>
+              O'qituvchi: <strong>{course.teacher_name}</strong>
             </p>
           </div>
           <div className="flex flex-col gap-2 min-w-32">
@@ -92,7 +92,7 @@ export default function CourseDetailPage() {
                       <Lock size={16} className="text-gray-400" />
                     )}
                     <span className="text-sm font-medium">{lesson.title}</span>
-                    {lesson.has_quiz && (
+                    {lesson.lesson_type === 'quiz' && (
                       <span className="badge bg-purple-100 text-purple-700">Quiz</span>
                     )}
                   </div>
@@ -100,6 +100,7 @@ export default function CourseDetailPage() {
                     <div className="flex gap-2">
                       <Link
                         to={`/lessons/${lesson.id}`}
+                        state={{ lesson, courseId: course.id }}
                         className="text-sm text-blue-600 hover:underline"
                       >
                         O'rganish

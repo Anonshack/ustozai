@@ -79,7 +79,7 @@ export default function CourseList() {
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1">
                   <h3 className="font-semibold text-lg leading-tight mb-1">{course.title}</h3>
-                  <p className="text-sm text-gray-500">{course.teacher.first_name} {course.teacher.last_name}</p>
+                  <p className="text-sm text-gray-500">{course.teacher_name}</p>
                 </div>
                 <BookOpen className="text-blue-500 ml-2 flex-shrink-0" size={20} />
               </div>

@@ -13,7 +13,7 @@ function ConversationList() {
 
   const { data: conversations } = useQuery<Conversation[]>({
     queryKey: ['conversations'],
-    queryFn: () => api.get('/chat/conversations/').then((r) => r.data),
+    queryFn: () => api.get('/chat/conversations/').then((r) => Array.isArray(r.data) ? r.data : r.data.results ?? []),
   })
 
   const createMutation = useMutation({

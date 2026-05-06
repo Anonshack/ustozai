@@ -7,12 +7,12 @@ import { TrendingUp, AlertCircle, BookOpen, CheckCircle } from 'lucide-react'
 export default function ProgressDashboard() {
   const { data: progress } = useQuery<CourseProgress[]>({
     queryKey: ['my-progress'],
-    queryFn: () => api.get('/progress/my-progress/').then((r) => r.data),
+    queryFn: () => api.get('/progress/my-progress/').then((r) => Array.isArray(r.data) ? r.data : r.data.results ?? []),
   })
 
   const { data: weakAreas } = useQuery<WeakArea[]>({
     queryKey: ['weak-areas'],
-    queryFn: () => api.get('/progress/weak-areas/').then((r) => r.data),
+    queryFn: () => api.get('/progress/weak-areas/').then((r) => Array.isArray(r.data) ? r.data : r.data.results ?? []),
   })
 
   const totalLessons = progress?.reduce((sum, c) => sum + c.total_lessons, 0) || 0

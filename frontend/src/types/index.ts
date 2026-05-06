@@ -27,7 +27,7 @@ export interface Course {
   level: string
   language: string
   category: Category | null
-  teacher: { id: number; email: string; first_name: string; last_name: string }
+  teacher_name: string
   is_enrolled?: boolean
   modules_count?: number
   lessons_count?: number
@@ -38,8 +38,9 @@ export interface Lesson {
   id: number
   title: string
   content: string
+  lesson_type: 'text' | 'video' | 'quiz'
   order: number
-  has_quiz: boolean
+  video_url?: string
 }
 
 export interface Module {
