@@ -56,7 +56,7 @@ export interface CourseDetail extends Course {
 
 export interface QuizQuestion {
   id: number
-  text: string
+  question: string
   topic_tag: string
   choices: { id: number; text: string }[]
 }

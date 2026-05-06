@@ -125,7 +125,7 @@ export default function LessonManager() {
               </div>
               <div className="flex gap-2 ml-4">
                 <button onClick={() => setQuizLesson(quizLesson === lesson.id ? null : lesson.id)} className="btn-secondary p-2" title="Quiz boshqarish">
-                  <Award size={16} className={lesson.has_quiz ? 'text-purple-600' : ''} />
+                  <Award size={16} className={lesson.lesson_type === 'quiz' ? 'text-purple-600' : ''} />
                 </button>
                 <button onClick={() => openEdit(lesson)} className="btn-secondary p-2">
                   <Edit size={16} />
@@ -179,7 +179,7 @@ function QuizManager({ lessonId, questions, onRefresh }: { lessonId: number; que
       </h4>
       {questions.map((q, i) => (
         <div key={q.id} className="text-sm bg-gray-50 rounded-lg p-3 mb-2">
-          <p className="font-medium">{i + 1}. {q.text}</p>
+          <p className="font-medium">{i + 1}. {q.question}</p>
           <div className="mt-1 space-y-1">
             {q.choices.map((c) => <p key={c.id} className="text-gray-600 pl-4">• {c.text}</p>)}
           </div>
