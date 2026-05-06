@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field
 from .models import Conversation, Message
 
 
@@ -17,11 +18,13 @@ class ConversationListSerializer(serializers.ModelSerializer):
         model = Conversation
         fields = ("id", "title", "course", "lesson", "last_message", "message_count", "created_at", "updated_at")
 
-    def get_last_message(self, obj):
+    @extend_schema_field(serializers.CharField(allow_null=True))
+    def get_last_message(self, obj) -> str | None:
         last = obj.messages.last()
         return last.content[:100] if last else None
 
-    def get_message_count(self, obj):
+    @extend_schema_field(serializers.IntegerField())
+    def get_message_count(self, obj) -> int:
         return obj.messages.count()
 
 

@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
+from drf_spectacular.utils import extend_schema, OpenApiResponse
 from .models import User
 from .serializers import RegisterSerializer, UserProfileSerializer, CustomTokenObtainPairSerializer
 
@@ -19,6 +20,10 @@ class LoginView(TokenObtainPairView):
 
 
 class LogoutView(APIView):
+    @extend_schema(
+        request={"application/json": {"type": "object", "properties": {"refresh": {"type": "string"}}}},
+        responses={200: OpenApiResponse(description="Logged out successfully.")},
+    )
     def post(self, request):
         try:
             refresh_token = request.data["refresh"]

@@ -1,6 +1,7 @@
 from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from drf_spectacular.utils import extend_schema
 from .models import Conversation, Message
 from .serializers import (
     ConversationListSerializer, ConversationDetailSerializer,
@@ -14,6 +15,8 @@ class ConversationViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Conversation.objects.none()
         return Conversation.objects.filter(student=self.request.user).prefetch_related("messages")
 
     def get_serializer_class(self):
@@ -26,11 +29,11 @@ class ConversationViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(student=self.request.user)
 
+    @extend_schema(request=SendMessageSerializer, responses=MessageSerializer)
     @action(detail=True, methods=["post"], url_path="send")
     def send_message(self, request, pk=None):
         conversation = self.get_object()
 
-        # Rate limit check
         if is_rate_limited(request.user.id):
             return Response(
                 {"detail": "Too many requests. Please slow down and try again in a minute."},
@@ -41,9 +44,7 @@ class ConversationViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         user_text = serializer.validated_data["message"]
 
-        # Exam / assignment bypass check
         if is_exam_request(user_text):
-            # Flag the conversation for instructor review
             if not conversation.is_flagged:
                 conversation.is_flagged = True
                 conversation.flag_reason = "Possible assignment bypass attempt detected."
@@ -62,14 +63,8 @@ class ConversationViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        # Save student message
-        Message.objects.create(
-            conversation=conversation,
-            role=Message.Role.USER,
-            content=user_text,
-        )
+        Message.objects.create(conversation=conversation, role=Message.Role.USER, content=user_text)
 
-        # Get AI response
         try:
             reply, input_tokens, output_tokens = get_ai_response(conversation)
         except Exception as e:
@@ -86,22 +81,24 @@ class ConversationViewSet(viewsets.ModelViewSet):
             output_tokens=output_tokens,
         )
 
-        # Auto-title from first user message
         if conversation.messages.count() <= 2 and not conversation.title:
             conversation.title = user_text[:80]
             conversation.save(update_fields=["title", "updated_at"])
 
         return Response(MessageSerializer(assistant_msg).data, status=status.HTTP_201_CREATED)
 
+    @extend_schema(responses=MessageSerializer(many=True))
     @action(detail=True, methods=["get"], url_path="messages")
     def list_messages(self, request, pk=None):
         conversation = self.get_object()
         return Response(MessageSerializer(conversation.messages.all(), many=True).data)
 
-    @action(detail=True, methods=["post"], url_path="flag",
-            permission_classes=[permissions.IsAdminUser])
+    @extend_schema(
+        request={"application/json": {"type": "object", "properties": {"reason": {"type": "string"}}}},
+        responses={200: {"type": "object", "properties": {"detail": {"type": "string"}}}},
+    )
+    @action(detail=True, methods=["post"], url_path="flag", permission_classes=[permissions.IsAdminUser])
     def flag(self, request, pk=None):
-        """Instructor manually flags a conversation for review."""
         conversation = self.get_object()
         reason = request.data.get("reason", "Flagged by instructor.")
         conversation.is_flagged = True
@@ -109,8 +106,8 @@ class ConversationViewSet(viewsets.ModelViewSet):
         conversation.save(update_fields=["is_flagged", "flag_reason"])
         return Response({"detail": "Conversation flagged."})
 
-    @action(detail=True, methods=["post"], url_path="unflag",
-            permission_classes=[permissions.IsAdminUser])
+    @extend_schema(responses={200: {"type": "object", "properties": {"detail": {"type": "string"}}}})
+    @action(detail=True, methods=["post"], url_path="unflag", permission_classes=[permissions.IsAdminUser])
     def unflag(self, request, pk=None):
         conversation = self.get_object()
         conversation.is_flagged = False

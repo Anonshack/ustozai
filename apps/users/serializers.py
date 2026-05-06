@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.password_validation import validate_password
+from drf_spectacular.utils import extend_schema_field
 from .models import User
 
 
@@ -27,7 +28,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
-    full_name = serializers.ReadOnlyField()
+    full_name = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -37,13 +38,21 @@ class UserProfileSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ("id", "email", "role", "date_joined")
 
+    @extend_schema_field(serializers.CharField())
+    def get_full_name(self, obj) -> str:
+        return obj.full_name
+
 
 class UserMiniSerializer(serializers.ModelSerializer):
-    full_name = serializers.ReadOnlyField()
+    full_name = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = ("id", "full_name", "avatar", "role", "level")
+
+    @extend_schema_field(serializers.CharField())
+    def get_full_name(self, obj) -> str:
+        return obj.full_name
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):

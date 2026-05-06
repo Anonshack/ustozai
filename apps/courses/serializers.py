@@ -1,5 +1,9 @@
 from rest_framework import serializers
-from .models import Category, Course, Module, Lesson, Enrollment, QuizQuestion, QuizChoice, QuizAttempt, QuizAnswer
+from drf_spectacular.utils import extend_schema_field
+from .models import (
+    Category, Course, Module, Lesson, Enrollment,
+    QuizQuestion, QuizChoice, QuizAttempt, QuizAnswer,
+)
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -37,7 +41,8 @@ class CourseListSerializer(serializers.ModelSerializer):
             "thumbnail", "level", "language", "price", "enrollment_count", "created_at",
         )
 
-    def get_enrollment_count(self, obj):
+    @extend_schema_field(serializers.IntegerField())
+    def get_enrollment_count(self, obj) -> int:
         return obj.enrollments.count()
 
 
@@ -74,14 +79,12 @@ class EnrollmentSerializer(serializers.ModelSerializer):
 # ── Quiz serializers ───────────────────────────────────────────────────────────
 
 class QuizChoiceSerializer(serializers.ModelSerializer):
-    """Student-facing: never exposes is_correct."""
     class Meta:
         model = QuizChoice
         fields = ("id", "text")
 
 
 class QuizChoiceAdminSerializer(serializers.ModelSerializer):
-    """Teacher/admin: includes is_correct."""
     class Meta:
         model = QuizChoice
         fields = ("id", "text", "is_correct")
@@ -128,7 +131,8 @@ class QuizAnswerResultSerializer(serializers.ModelSerializer):
         model = QuizAnswer
         fields = ("question_text", "chosen_text", "is_correct", "correct_choice")
 
-    def get_correct_choice(self, obj):
+    @extend_schema_field(serializers.CharField(allow_null=True))
+    def get_correct_choice(self, obj) -> str | None:
         correct = obj.question.choices.filter(is_correct=True).first()
         return correct.text if correct else None
 

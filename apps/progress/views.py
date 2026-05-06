@@ -1,6 +1,7 @@
 from django.utils import timezone
 from rest_framework import generics, views, permissions, status
 from rest_framework.response import Response
+from drf_spectacular.utils import extend_schema
 from .models import LessonProgress, CourseProgress, WeakArea
 from .serializers import (
     LessonProgressSerializer, MarkLessonCompleteSerializer,
@@ -12,6 +13,7 @@ from apps.courses.models import Lesson
 class MarkLessonCompleteView(views.APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
+    @extend_schema(request=MarkLessonCompleteSerializer, responses=LessonProgressSerializer)
     def post(self, request):
         serializer = MarkLessonCompleteSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -54,6 +56,8 @@ class MyCourseProgressView(generics.ListAPIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return CourseProgress.objects.none()
         return CourseProgress.objects.filter(student=self.request.user).select_related("course")
 
 
@@ -62,28 +66,29 @@ class CourseLessonProgressView(generics.ListAPIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return LessonProgress.objects.none()
         return LessonProgress.objects.filter(
             student=self.request.user,
             lesson__module__course_id=self.kwargs["course_id"],
         ).select_related("lesson")
 
 
-# ── Weak areas ─────────────────────────────────────────────────────────────────
-
 class MyWeakAreasView(generics.ListAPIView):
-    """GET /api/v1/progress/weak-areas/  — student sees their own weak areas."""
     serializer_class = WeakAreaSerializer
     permission_classes = (permissions.IsAuthenticated,)
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return WeakArea.objects.none()
         resolved = self.request.query_params.get("resolved", "false").lower() == "true"
         return WeakArea.objects.filter(student=self.request.user, resolved=resolved)
 
 
 class WeakAreaCreateView(views.APIView):
-    """POST /api/v1/progress/weak-areas/create/  — teacher/admin manually adds weak area."""
     permission_classes = (permissions.IsAuthenticated,)
 
+    @extend_schema(request=WeakAreaCreateSerializer, responses=WeakAreaSerializer)
     def post(self, request):
         if request.user.role not in ("teacher", "admin"):
             return Response({"detail": "Only teachers can assign weak areas."}, status=status.HTTP_403_FORBIDDEN)
@@ -107,12 +112,11 @@ class WeakAreaCreateView(views.APIView):
 
 
 class WeakAreaResolveView(views.APIView):
-    """POST /api/v1/progress/weak-areas/<id>/resolve/"""
     permission_classes = (permissions.IsAuthenticated,)
 
+    @extend_schema(request=None, responses=WeakAreaSerializer)
     def post(self, request, pk):
         try:
-            # Student can resolve their own; teacher/admin can resolve anyone's
             if request.user.role in ("teacher", "admin"):
                 weak_area = WeakArea.objects.get(pk=pk)
             else:

@@ -3,7 +3,9 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
-from .models import Category, Course, Module, Lesson, Enrollment, QuizQuestion
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
+from .models import Category, Course, Module, Lesson, Enrollment, QuizQuestion, QuizAttempt
 from .serializers import (
     CategorySerializer, CourseListSerializer, CourseDetailSerializer,
     CourseWriteSerializer, ModuleSerializer, LessonSerializer, EnrollmentSerializer,
@@ -41,6 +43,8 @@ class CourseViewSet(viewsets.ModelViewSet):
     ordering_fields = ("created_at", "price")
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Course.objects.none()
         qs = Course.objects.select_related("category", "teacher").prefetch_related("enrollments")
         if self.request.user.is_authenticated and self.request.user.role == "teacher":
             if self.action in ("update", "partial_update", "destroy"):
@@ -75,6 +79,8 @@ class ModuleViewSet(viewsets.ModelViewSet):
     permission_classes = (IsTeacherOrReadOnly,)
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Module.objects.none()
         return Module.objects.filter(course_id=self.kwargs["course_pk"])
 
     def perform_create(self, serializer):
@@ -82,11 +88,19 @@ class ModuleViewSet(viewsets.ModelViewSet):
         serializer.save(course=course)
 
 
+@extend_schema(
+    parameters=[
+        OpenApiParameter("course_pk", OpenApiTypes.INT, OpenApiParameter.PATH),
+        OpenApiParameter("module_pk", OpenApiTypes.INT, OpenApiParameter.PATH),
+    ]
+)
 class LessonViewSet(viewsets.ModelViewSet):
     serializer_class = LessonSerializer
     permission_classes = (IsTeacherOrReadOnly,)
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Lesson.objects.none()
         return Lesson.objects.filter(module_id=self.kwargs["module_pk"])
 
     def perform_create(self, serializer):
@@ -98,37 +112,30 @@ class MyEnrollmentsView(generics.ListAPIView):
     serializer_class = EnrollmentSerializer
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Enrollment.objects.none()
         return Enrollment.objects.filter(student=self.request.user).select_related("course")
 
 
 # ── Quiz views ─────────────────────────────────────────────────────────────────
 
 class QuizView(views.APIView):
-    """
-    GET  /api/v1/courses/lessons/<lesson_id>/quiz/         — fetch questions (no correct answers exposed)
-    POST /api/v1/courses/lessons/<lesson_id>/quiz/manage/  — add question (teacher only)
-    """
     permission_classes = (permissions.IsAuthenticated,)
 
-    def _get_lesson(self, lesson_id):
+    @extend_schema(responses=QuizQuestionSerializer(many=True))
+    def get(self, request, lesson_id):
         try:
             lesson = Lesson.objects.get(pk=lesson_id, lesson_type=Lesson.Type.QUIZ)
         except Lesson.DoesNotExist:
-            return None
-        return lesson
-
-    def get(self, request, lesson_id):
-        lesson = self._get_lesson(lesson_id)
-        if not lesson:
             return Response({"detail": "Quiz lesson not found."}, status=status.HTTP_404_NOT_FOUND)
         questions = lesson.quiz_questions.prefetch_related("choices")
         return Response(QuizQuestionSerializer(questions, many=True).data)
 
 
 class QuizManageView(views.APIView):
-    """Teacher adds questions to a quiz lesson."""
     permission_classes = (permissions.IsAuthenticated,)
 
+    @extend_schema(request=QuizQuestionWriteSerializer, responses=QuizQuestionSerializer)
     def post(self, request, lesson_id):
         if request.user.role not in ("teacher", "admin"):
             return Response({"detail": "Only teachers can add quiz questions."}, status=status.HTTP_403_FORBIDDEN)
@@ -144,12 +151,9 @@ class QuizManageView(views.APIView):
 
 
 class QuizSubmitView(views.APIView):
-    """
-    POST /api/v1/courses/lessons/<lesson_id>/quiz/submit/
-    Body: {"answers": [{"question_id": 1, "choice_id": 3}, ...]}
-    """
     permission_classes = (permissions.IsAuthenticated,)
 
+    @extend_schema(request=QuizSubmitSerializer, responses=QuizAttemptResultSerializer)
     def post(self, request, lesson_id):
         try:
             lesson = Lesson.objects.get(pk=lesson_id, lesson_type=Lesson.Type.QUIZ)
@@ -168,12 +172,12 @@ class QuizSubmitView(views.APIView):
 
 
 class MyQuizAttemptsView(generics.ListAPIView):
-    """GET /api/v1/courses/lessons/<lesson_id>/quiz/my-attempts/"""
     serializer_class = QuizAttemptResultSerializer
     permission_classes = (permissions.IsAuthenticated,)
 
     def get_queryset(self):
-        from .models import QuizAttempt
+        if getattr(self, "swagger_fake_view", False):
+            return QuizAttempt.objects.none()
         return QuizAttempt.objects.filter(
             student=self.request.user,
             lesson_id=self.kwargs["lesson_id"],

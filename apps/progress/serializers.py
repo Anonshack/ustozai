@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field
 from .models import LessonProgress, CourseProgress, WeakArea
 
 
@@ -15,7 +16,7 @@ class MarkLessonCompleteSerializer(serializers.Serializer):
 
 
 class CourseProgressSerializer(serializers.ModelSerializer):
-    percentage = serializers.ReadOnlyField()
+    percentage = serializers.SerializerMethodField()
     course_title = serializers.CharField(source="course.title", read_only=True)
 
     class Meta:
@@ -24,6 +25,10 @@ class CourseProgressSerializer(serializers.ModelSerializer):
             "id", "course", "course_title",
             "total_lessons", "completed_lessons", "percentage", "last_accessed_at",
         )
+
+    @extend_schema_field(serializers.FloatField())
+    def get_percentage(self, obj) -> float:
+        return obj.percentage
 
 
 class WeakAreaSerializer(serializers.ModelSerializer):
@@ -34,7 +39,6 @@ class WeakAreaSerializer(serializers.ModelSerializer):
 
 
 class WeakAreaCreateSerializer(serializers.ModelSerializer):
-    """Used by teacher/admin to manually add a weak area for a student."""
     student_id = serializers.IntegerField()
 
     class Meta:
