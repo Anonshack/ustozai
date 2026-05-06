@@ -1,6 +1,6 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
-import { BookOpen, MessageCircle, TrendingUp, User, LogOut, GraduationCap, Menu, X } from 'lucide-react'
+import { BookOpen, MessageCircle, TrendingUp, User, LogOut, GraduationCap, Menu, X, Shield } from 'lucide-react'
 import { useState } from 'react'
 
 const navItems = [
@@ -59,6 +59,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   Panel
                 </Link>
               )}
+              {user?.is_superuser && (
+                <Link
+                  to="/admin"
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    isActive('/admin') ? 'bg-red-50 text-red-600' : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  <Shield size={16} />
+                  Admin
+                </Link>
+              )}
             </div>
 
             {/* User menu */}
@@ -102,6 +113,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             {(user?.role === 'teacher' || user?.role === 'admin') && (
               <Link to="/teacher" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600">
                 <GraduationCap size={16} /> Panel
+              </Link>
+            )}
+            {user?.is_superuser && (
+              <Link
+                to="/admin"
+                onClick={() => setMobileOpen(false)}
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium ${
+                  isActive('/admin') ? 'bg-red-50 text-red-600' : 'text-gray-600'
+                }`}
+              >
+                <Shield size={16} /> Admin
               </Link>
             )}
             <Link to="/profile" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-600">

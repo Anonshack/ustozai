@@ -6,7 +6,7 @@ import { BookOpen } from 'lucide-react'
 
 export default function Register() {
   const [form, setForm] = useState({
-    email: '', password: '', first_name: '', last_name: '',
+    email: '', password: '', password2: '', first_name: '', last_name: '',
     level: 'beginner', language: 'uz',
   })
   const [loading, setLoading] = useState(false)
@@ -17,15 +17,19 @@ export default function Register() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (form.password !== form.password2) {
+      toast.error('Parollar mos kelmaydi')
+      return
+    }
     setLoading(true)
     try {
       await register(form)
-      toast.success('Muvaffaqiyatli ro\'yxatdan o\'tdingiz!')
+      toast.success("Muvaffaqiyatli ro'yxatdan o'tdingiz!")
       navigate('/')
     } catch (err: any) {
       const errors = err.response?.data
       const msg = errors ? Object.values(errors).flat().join(', ') : 'Xato yuz berdi'
-      toast.error(msg)
+      toast.error(String(msg))
     } finally {
       setLoading(false)
     }
@@ -56,7 +60,11 @@ export default function Register() {
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Parol</label>
-            <input className="input" type="password" value={form.password} onChange={(e) => set('password', e.target.value)} required placeholder="••••••••" />
+            <input className="input" type="password" value={form.password} onChange={(e) => set('password', e.target.value)} required placeholder="••••••••" minLength={8} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Parolni tasdiqlang</label>
+            <input className="input" type="password" value={form.password2} onChange={(e) => set('password2', e.target.value)} required placeholder="••••••••" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -77,7 +85,7 @@ export default function Register() {
             </div>
           </div>
           <button type="submit" className="btn-primary w-full" disabled={loading}>
-            {loading ? 'Ro\'yxatdan o\'tilmoqda...' : 'Ro\'yxatdan o\'tish'}
+            {loading ? "Ro'yxatdan o'tilmoqda..." : "Ro'yxatdan o'tish"}
           </button>
         </form>
         <p className="mt-4 text-center text-sm text-gray-600">

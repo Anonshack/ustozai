@@ -3,13 +3,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
 import api from '../../lib/api'
 import type { Conversation, Message } from '../../types'
-import { Send, Plus, MessageCircle, Bot, User } from 'lucide-react'
+import { Send, Plus, MessageCircle, Bot, User, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 function ConversationList() {
   const navigate = useNavigate()
   const qc = useQueryClient()
   const [searchParams] = useSearchParams()
+  const { id: activeId } = useParams<{ id: string }>()
 
   const { data: conversations } = useQuery<Conversation[]>({
     queryKey: ['conversations'],
@@ -23,22 +24,29 @@ function ConversationList() {
       qc.invalidateQueries({ queryKey: ['conversations'] })
       navigate(`/chat/${res.data.id}`)
     },
-    onError: () => toast.error('Suhbat yaratib bo\'lmadi'),
+    onError: () => toast.error("Suhbat yaratib bo'lmadi"),
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => api.delete(`/chat/conversations/${id}/`),
+    onSuccess: (_data, id) => {
+      qc.invalidateQueries({ queryKey: ['conversations'] })
+      if (activeId === String(id)) navigate('/chat')
+      toast.success("Suhbat o'chirildi")
+    },
+    onError: () => toast.error("O'chirib bo'lmadi"),
   })
 
   const lessonId = searchParams.get('lesson')
-
   useEffect(() => {
     if (lessonId) createMutation.mutate(Number(lessonId))
   }, [])
-
-  const handleNewChat = () => createMutation.mutate(undefined)
 
   return (
     <div className="w-64 border-r border-gray-200 flex flex-col h-full bg-white">
       <div className="p-4 border-b border-gray-200">
         <button
-          onClick={handleNewChat}
+          onClick={() => createMutation.mutate(undefined)}
           disabled={createMutation.isPending}
           className="btn-primary w-full flex items-center justify-center gap-2 text-sm"
         >
@@ -47,17 +55,31 @@ function ConversationList() {
       </div>
       <div className="flex-1 overflow-y-auto">
         {conversations?.map((conv) => (
-          <Link
+          <div
             key={conv.id}
-            to={`/chat/${conv.id}`}
-            className="flex items-center gap-3 p-3 hover:bg-gray-50 border-b border-gray-100 transition-colors"
+            className={`group flex items-center gap-2 p-3 border-b border-gray-100 transition-colors ${
+              activeId === String(conv.id) ? 'bg-blue-50' : 'hover:bg-gray-50'
+            }`}
           >
-            <MessageCircle size={16} className="text-gray-400 flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{conv.title}</p>
-              <p className="text-xs text-gray-400">{conv.message_count} xabar</p>
-            </div>
-          </Link>
+            <Link to={`/chat/${conv.id}`} className="flex items-center gap-2 flex-1 min-w-0">
+              <MessageCircle size={16} className="text-gray-400 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{conv.title}</p>
+                <p className="text-xs text-gray-400">{conv.message_count} xabar</p>
+              </div>
+            </Link>
+            <button
+              onClick={() => {
+                if (confirm("Suhbatni o'chirishni tasdiqlaysizmi?")) {
+                  deleteMutation.mutate(conv.id)
+                }
+              }}
+              disabled={deleteMutation.isPending}
+              className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 transition-all flex-shrink-0"
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
         ))}
         {conversations?.length === 0 && (
           <p className="text-center text-sm text-gray-400 p-4">Suhbat yo'q</p>
@@ -86,7 +108,7 @@ function ChatWindow({ conversationId }: { conversationId: string }) {
       qc.invalidateQueries({ queryKey: ['conversations'] })
       setInput('')
     },
-    onError: (err: any) => toast.error(err.response?.data?.detail || 'Xabar yuborib bo\'lmadi'),
+    onError: (err: any) => toast.error(err.response?.data?.detail || "Xabar yuborib bo'lmadi"),
   })
 
   useEffect(() => {

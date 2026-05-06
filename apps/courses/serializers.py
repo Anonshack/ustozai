@@ -33,17 +33,25 @@ class CourseListSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     teacher_name = serializers.CharField(source="teacher.full_name", read_only=True)
     enrollment_count = serializers.SerializerMethodField()
+    is_enrolled = serializers.SerializerMethodField()
 
     class Meta:
         model = Course
         fields = (
             "id", "title", "slug", "description", "category", "teacher_name",
-            "thumbnail", "level", "language", "price", "enrollment_count", "created_at",
+            "thumbnail", "level", "language", "price", "enrollment_count", "is_enrolled", "created_at",
         )
 
     @extend_schema_field(serializers.IntegerField())
     def get_enrollment_count(self, obj) -> int:
         return obj.enrollments.count()
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_is_enrolled(self, obj) -> bool:
+        request = self.context.get("request")
+        if request and request.user.is_authenticated:
+            return obj.enrollments.filter(student=request.user).exists()
+        return False
 
 
 class CourseDetailSerializer(CourseListSerializer):

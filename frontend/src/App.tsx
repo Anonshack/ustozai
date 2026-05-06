@@ -22,6 +22,8 @@ import TeacherPanel from './pages/teacher/TeacherPanel'
 import ModuleManager from './pages/teacher/ModuleManager'
 import LessonManager from './pages/teacher/LessonManager'
 
+import SuperuserPanel from './pages/admin/SuperuserPanel'
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: { retry: 1, refetchOnWindowFocus: false, staleTime: 30000 },
@@ -85,6 +87,16 @@ function App() {
                       element={
                         <ProtectedRoute roles={['teacher', 'admin']}>
                           <LessonManager />
+                        </ProtectedRoute>
+                      }
+                    />
+
+                    {/* Superuser admin route */}
+                    <Route
+                      path="/admin"
+                      element={
+                        <ProtectedRoute requireSuperuser>
+                          <SuperuserPanel />
                         </ProtectedRoute>
                       }
                     />

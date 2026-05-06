@@ -1,11 +1,57 @@
 export interface User {
   id: number
   email: string
+  username: string
   first_name: string
   last_name: string
+  full_name?: string
   role: 'student' | 'teacher' | 'admin'
   level: 'beginner' | 'intermediate' | 'advanced'
   language: 'uz' | 'ru' | 'en'
+  avatar?: string | null
+  bio?: string
+  phone?: string
+  is_superuser?: boolean
+  date_joined?: string
+}
+
+export interface AdminUser extends User {
+  is_active: boolean
+  last_login?: string | null
+}
+
+export interface AdminStats {
+  total_users: number
+  total_students: number
+  total_teachers: number
+  active_users: number
+  total_courses: number
+  published_courses: number
+  total_enrollments: number
+  total_conversations: number
+  flagged_conversations: number
+}
+
+export interface AdminConversation {
+  id: number
+  student_email: string
+  student_name: string
+  title: string
+  is_flagged: boolean
+  flag_reason: string
+  message_count: number
+  updated_at: string
+}
+
+export interface AdminCourse {
+  id: number
+  title: string
+  teacher_name: string
+  teacher_email: string
+  level: string
+  is_published: boolean
+  enrollment_count: number
+  created_at: string
 }
 
 export interface AuthTokens {
