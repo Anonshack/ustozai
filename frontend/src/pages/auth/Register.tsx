@@ -7,7 +7,7 @@ import { BookOpen } from 'lucide-react'
 export default function Register() {
   const [form, setForm] = useState({
     email: '', password: '', first_name: '', last_name: '',
-    role: 'student', level: 'beginner', language: 'uz',
+    level: 'beginner', language: 'uz',
   })
   const [loading, setLoading] = useState(false)
   const register = useAuthStore((s) => s.register)
@@ -58,14 +58,7 @@ export default function Register() {
             <label className="block text-sm font-medium mb-1">Parol</label>
             <input className="input" type="password" value={form.password} onChange={(e) => set('password', e.target.value)} required placeholder="••••••••" />
           </div>
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className="block text-sm font-medium mb-1">Rol</label>
-              <select className="input" value={form.role} onChange={(e) => set('role', e.target.value)}>
-                <option value="student">O'quvchi</option>
-                <option value="teacher">O'qituvchi</option>
-              </select>
-            </div>
+          <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium mb-1">Daraja</label>
               <select className="input" value={form.level} onChange={(e) => set('level', e.target.value)}>
