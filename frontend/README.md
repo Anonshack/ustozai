@@ -1,73 +1,123 @@
-# React + TypeScript + Vite
+# Ustozai Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + TypeScript + Vite bilan qurilgan o'quv platformasi frontend qismi.
 
-Currently, two official plugins are available:
+## Texnologiyalar
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- React 18
+- TypeScript
+- Vite
+- React Router v6
+- TanStack Query (React Query)
+- Zustand (state management)
+- Axios
+- Tailwind CSS
+- Lucide React (icons)
 
-## React Compiler
+## O'rnatish
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+cd frontend
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+`.env` faylini to'ldiring:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+```
+VITE_API_URL=http://localhost:8000/api/v1
+```
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Ishga tushirish
+
+```bash
+npm run dev
+```
+
+Frontend `http://localhost:3000` da ishga tushadi.
+
+## Build
+
+```bash
+npm run build
+```
+
+Build fayllari `dist/` papkasida bo'ladi.
+
+## Loyiha strukturasi
+
+```
+src/
+  components/       # Umumiy komponentlar (Layout, ProtectedRoute)
+  lib/              # API client, utilities
+  pages/            # Sahifalar
+    auth/           # Login, Register, Profile
+    courses/        # CourseList, CourseDetail
+    lessons/        # LessonView (quiz bilan)
+    chat/           # AI chat
+    progress/       # Progress dashboard
+    teacher/        # Teacher panel (CRUD)
+  store/            # Zustand stores (authStore)
+  types/            # TypeScript types
+  App.tsx           # Router
+  main.tsx          # Entry point
+```
+
+## Asosiy xususiyatlar
+
+### O'quvchi uchun:
+- Kurslar ro'yxati (search, filter)
+- Kursga yozilish
+- Dars o'qish
+- Quiz yechish (70% dan yuqori o'tadi)
+- AI mentor bilan suhbat
+- Progress ko'rish
+- Zaif tomonlar
+
+### O'qituvchi uchun:
+- Kurs yaratish/tahrirlash
+- Modul qo'shish
+- Dars yaratish
+- Quiz savollari qo'shish
+
+## API Integration
+
+Backend: `http://localhost:8000/api/v1`
+
+Barcha so'rovlar JWT token bilan autentifikatsiya qilinadi. Token avtomatik refresh qilinadi.
+
+## Deployment
+
+Production uchun `.env.production` faylini to'ldiring:
+
+```
+VITE_API_URL=https://yourdomain.com/api/v1
+```
+
+Build qiling:
+
+```bash
+npm run build
+```
+
+`dist/` papkasini Nginx, Vercel, Netlify yoki boshqa static hosting ga deploy qiling.
+
+### Nginx misol
+
+```nginx
+server {
+    listen 80;
+    server_name yourdomain.com;
+    root /var/www/ustozai/frontend/dist;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    location /api {
+        proxy_pass http://localhost:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
 ```
