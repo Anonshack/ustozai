@@ -31,11 +31,21 @@ const queryClient = new QueryClient({
 })
 
 function App() {
-  const { isAuthenticated, fetchMe } = useAuthStore()
+  const { isAuthenticated, fetchMe, logout } = useAuthStore()
 
   useEffect(() => {
-    if (isAuthenticated && localStorage.getItem('access_token')) {
-      fetchMe().catch(() => {})
+    const token = localStorage.getItem('access_token')
+    const refresh = localStorage.getItem('refresh_token')
+    if (isAuthenticated) {
+      if (token || refresh) {
+        fetchMe().catch(() => {
+          // fetchMe failed even after token refresh — force logout
+          logout()
+        })
+      } else {
+        // Persisted isAuthenticated=true but no tokens — clear stale state
+        logout()
+      }
     }
   }, [])
 
